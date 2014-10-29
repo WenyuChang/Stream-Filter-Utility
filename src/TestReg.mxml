@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" applicationComplete="init()">
+    
+    <mx:Script>
+        <![CDATA[
+            import mx.collections.Sort;
+            import mx.collections.SortField;
+            import mx.rpc.events.ResultEvent;
+            import mx.collections.ArrayCollection;
+            import mx.utils.StringUtil;
+            
+            
+            private var array:ArrayCollection = new ArrayCollection();
+            
+            [Bindable]
+            private var displayArr:ArrayCollection = new ArrayCollection();
+            
+            
+            private function init():void {
+                xmlLoader.send();                
+            }
+            private function xmlLoad(event:ResultEvent):void {
+                var xml:XML = event.result as XML;
+                for each ( var item:XML in xml..Name) {
+                    array.addItem(item.toString());
+                    displayArr.addItem(item.toString());
+                }
+            }
+            private function filter():void {
+                displayArr.removeAll();
+                var filterText:String = StringUtil.trim(filterTI.text);                
+                                 
+                var validFilterText:String =  filterText.replace(/[|()*+?<>]/g," ");
+                
+                var filterStrs:Array = validFilterText.split(" ");
+                
+                var tempArray1:ArrayCollection = new ArrayCollection();
+                var tempArray2:ArrayCollection = new ArrayCollection();
+                
+                var count = 0;
+                
+                var words:String = "";
+                
+                for each (var filterStr:String in filterStrs) {
+                 
+                    words = words + " " + filterStr;
+                    count ++;
+                    
+                    var regStr:String = "^.*"+filterStr+".*$";
+                    var regExp:RegExp = new RegExp(regStr, "gi");   
+                    
+                    trace(count+":"+regStr);                 
+                    
+                    if (count==1) {
+                        for each ( var name:String in array ) {
+                            if (regExp.test(name)) {
+                                tempArray1.addItem(name);
+                            }
+                        }
+                    }
+                    
+                    else if (count%2==0) {
+                        tempArray2.removeAll();
+                        for each ( var name:String in tempArray1 ) {
+                            if (regExp.test(name)) {
+                                tempArray2.addItem(name);
+                            }
+                        }
+                    }
+                    else if (count%2==1) {
+                        tempArray1.removeAll();
+                        for each ( var name:String in tempArray2 ) {
+                            if (regExp.test(name)) {
+                                tempArray1.addItem(name);
+                            }
+                        }
+                    }                    
+                }
+                
+                
+                if (count==0) {
+                    displayArr = array;
+                }
+                else if (count%2==0) {
+                    displayArr = tempArray2;
+                }
+                else if (count%2==1) {
+                    displayArr = tempArray1;
+                }
+                
+                validFilterWords.text = validFilterText;
+            }
+            
+//            [Bindable]
+//            private var gameArr:ArrayCollection = new ArrayCollection();
+//            
+//            private function onGameModeChange(event:MouseEvent):void
+//            {
+//                gameArr.removeAll();
+//                if (gameMode.selected) {
+//                    gameMode.label = "Game";   
+//                    var sortField:SortField = new SortField("name");
+//                    var sort:Sort = new Sort();
+//                    sort.fields = [sortField];
+//                    displayArr.sort = sort;
+//                    displayArr.refresh();
+//                    
+//                    var previousGame:Object;
+//                    var currGame:Object
+//                    for each( var obj:Object in displayArr) {
+//                        currGame = new Object();
+//                        currGame.name = StringUtil.trim(obj.name.replace("(away)","").replace("(home)",""));
+//                        currGame.count = 1;
+//                        if (previousGame==null || currGame.name!=previousGame.name) {
+//                            previousGame = currGame;
+//                            gameArr.addItem(currGame);
+//                        }else{
+//                            previousGame.count += 1;
+//                        }
+//                        
+//                    }   
+//                    
+//                                  
+//                }
+//                else {
+//                    gameMode.label = "Stream";
+//                    
+//                }
+//            }
+        ]]>
+    </mx:Script>
+    <mx:VBox width="100%" height="100%" horizontalAlign="left">
+        <mx:TextInput id="filterTI" width="400" keyUp="filter()"/>
+        <mx:Label id="validFilterWords"/>
+        <mx:Label text="{displayArr.length+' streams.'}"/>
+        <!--<mx:Button id="gameMode" toggle="true" click="onGameModeChange(event)" label="Stream"/>-->
+        <mx:List id="streamList" width="400" height="200" dataProvider="{displayArr}" labelField="name">        
+        </mx:List>
+        <!--<mx:DataGrid id="gameList" width="400" height="200" dataProvider="{gameArr}">
+            <mx:columns>
+                <mx:DataGridColumn dataField="name"/>
+                <mx:DataGridColumn dataField="count"/>
+            </mx:columns>        
+        </mx:DataGrid>-->
+    </mx:VBox>
+    <mx:HTTPService id="xmlLoader" url="./StreamNames.xml" resultFormat="e4x" result="xmlLoad(event)"/>
+</mx:Application>

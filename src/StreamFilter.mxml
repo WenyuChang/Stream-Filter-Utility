@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				minWidth="955" minHeight="600" initialize="init()">
+	<mx:Script>
+		<![CDATA[
+		    import mx.rpc.events.ResultEvent;
+			import mx.charts.chartClasses.StackedSeries;
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.effects.IAbstractEffect;
+			
+			
+			[Bindable]
+			var currentList:ArrayCollection = new ArrayCollection();
+			var list:ArrayCollection = new ArrayCollection();
+		
+			
+			public function init():void
+			{
+    			xmlLoader.send();                
+            }
+            private function xmlLoad(event:ResultEvent):void {
+                var xml:XML = event.result as XML;
+                for each ( var item:XML in xml..Name) {
+                    list.addItem(item.toString());
+                    currentList.addItem(item.toString());
+                }
+                
+                streamList.dataProvider = currentList;
+            }
+			
+			
+			public function userInput():void
+			{
+				currentList.removeAll();
+				var input:Array = (textInput.text).split(" ");
+				for(var i:int=0;i<list.length;i++)
+				{
+					var flag:Boolean = true;
+					for(var j=0;j<input.length; j++)
+					{
+						if(input[j]!="" && String(list.getItemAt(i)).toLowerCase().search(input[j].toLowerCase())==-1)
+						{
+							flag = false;
+							break;
+						}
+					}
+					if(flag)
+					{
+						currentList.addItem(list.getItemAt(i));
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%">
+		<mx:TextInput id="textInput" width="300" height="20" change="userInput()" />
+		<mx:List id="streamList" width="600" height="400"/>
+	</mx:VBox>
+	<mx:HTTPService id="xmlLoader" url="./StreamNames.xml" resultFormat="e4x" result="xmlLoad(event)"/>
+</mx:Application>
